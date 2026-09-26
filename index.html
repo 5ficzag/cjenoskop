@@ -116,7 +116,7 @@ ul.items li:last-child{border-bottom:0}
 .bignum{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:-.03em;line-height:1}
 .bignum small{font-size:20px;font-weight:700;margin-left:2px}
 .bars{display:grid;gap:7px;margin-top:16px}
-.bar{display:grid;grid-template-columns:86px minmax(0,1fr) 78px;align-items:center;gap:10px;font-size:13.5px}
+.bar{display:grid;grid-template-columns:86px minmax(0,1fr) 92px;align-items:center;gap:10px;font-size:13.5px}
 .bar .lab{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .track{height:22px;border-radius:4px;position:relative}
 .bar .fill{position:absolute;inset:0 auto 0 0;background:var(--line);border-radius:0 4px 4px 0;transition:width .35s ease}
@@ -294,7 +294,7 @@ footer a{color:var(--ink2)}
     <div class="card">
       <p class="eyebrow">Akcije na dan <span id="dealDate"></span> · cijela Hrvatska</p>
       <h2>Je li popust stvaran?</h2>
-      <p class="sub">Akcijsku cijenu uspoređujemo s cijenom koju je isti lanac tražio prije 2 do 4 tjedna. Ako je cijena podignuta tik prije akcije, to vidimo.</p>
+      <p class="sub">Akcijsku cijenu uspoređujemo s cijenom koju je isti lanac stvarno tražio prije 2 do 4 tjedna. Ako je proizvod već tjednima bio jednako jeftin, oglašeni postotak nije nova ušteda.</p>
       <div class="summary" id="dealSummary"></div>
       <div class="toolbar">
         <div class="chips" id="dealFilter" role="group" aria-label="Filtriraj po ocjeni"></div>
@@ -481,13 +481,12 @@ function renderBasket(){
     $("bestTotal").innerHTML=best.t.toFixed(2).replace(".",",")+"<small>€</small>";
     $("bestWhere").innerHTML=`u <b>${esc(chainName(best.ch))}</b> za ${ids.reduce((s,e)=>s+basket[e],0)} kom.`+(full.length>1?` · ušteda <b class="num">${eur(worst.t-best.t)}</b> u odnosu na najskuplji lanac koji ima sve`:"");
     $("worstTotal").textContent=full.length>1?eur(worst.t)+" · "+chainName(worst.ch):"–";
+    document.querySelector(".worst").hidden=full.length<2;
   }else{
-    $("bestTotal").innerHTML="–";
-    $("bestWhere").innerHTML="Nijedan lanac nema sve proizvode iz košarice. Pogledaj kombinaciju dvije trgovine ispod.";
-    $("worstTotal").textContent="–";
+    $("bestTotal").innerHTML="–";$("bestWhere").innerHTML="Nijedan lanac ovdje nema sve proizvode iz košarice.";$("worstTotal").textContent="–";document.querySelector(".worst").hidden=true;
   }
   const maxT=Math.max(...shown.map(r=>r.t));
-  $("bars").innerHTML=shown.map((r,k)=>{const best=full.length&&r===full[0];return `<div class="bar${best?" best":""}${r.miss?" partial":""}"><span class="lab">${esc(chainName(r.ch))}</span><span class="track"><span class="fill" style="width:${(r.t/maxT*100).toFixed(1)}%"></span></span><span class="val">${eur(r.t)}${r.miss?`<br><span class="diff">nema ${r.miss} art.</span>`:(full.length&&!best?`<br><span class="diff">+${eur(r.t-full[0].t)}</span>`:"")}</span></div>`}).join("");
+  $("bars").innerHTML=shown.map((r,k)=>{const best=full.length&&r===full[0];return `<div class="bar${best?" best":""}${r.miss?" partial":""}"><span class="lab">${esc(chainName(r.ch))}</span><span class="track"><span class="fill" style="width:${(r.t/maxT*100).toFixed(1)}%"></span></span><span class="val">${eur(r.t)}${r.miss?`<br><span class="diff">bez ${r.miss} art.</span>`:(full.length&&!best?`<br><span class="diff">+${eur(r.t-full[0].t)}</span>`:"")}</span></div>`}).join("");
 
   // best pair covering everything
   let bp=null;const cand=rows.slice(0,12);
@@ -498,9 +497,13 @@ function renderBasket(){
     if(ok&&(!bp||t<bp.t))bp={a:A,b:B,t,split};
   }
   const cb=$("combo");
+  if(!full.length&&bp){
+    $("bestTotal").innerHTML=bp.t.toFixed(2).replace(".",",")+"<small>€</small>";
+    $("bestWhere").innerHTML=`u dvije trgovine: <b>${esc(chainName(chains[bp.a]))}</b> + <b>${esc(chainName(chains[bp.b]))}</b>. Nijedan lanac ovdje nema baš sve iz košarice.`;
+  }
   if(bp&&(!full.length||full[0].t-bp.t>0.3)){
     const save=full.length?full[0].t-bp.t:null;
-    cb.innerHTML=`<p><b>${full.length?"Pametnije u dvije trgovine":"Cijela košarica u dvije trgovine"}:</b> ${esc(chainName(chains[bp.a]))} + ${esc(chainName(chains[bp.b]))} = <b class="num">${eur(bp.t)}</b>${save!=null?`, još <b class="num">${eur(save)}</b> manje.`:"."}</p>
+    cb.innerHTML=`<p><b>${full.length?"Pametnije u dvije trgovine":"Podjela kupovine"}:</b> ${esc(chainName(chains[bp.a]))} + ${esc(chainName(chains[bp.b]))} = <b class="num">${eur(bp.t)}</b>${save!=null?`, još <b class="num">${eur(save)}</b> manje.`:"."}</p>
       <div class="split">${[bp.a,bp.b].map(i=>`<span>${esc(chainName(chains[i]))}: ${bp.split[i]||0} art.</span>`).join("")}</div>`;
     cb.hidden=false;
   }else if(full.length){
@@ -535,12 +538,13 @@ function renderLine(){
   const W=Math.max(280,el.clientWidth),H=210,m={l:48,r:14,t:14,b:26};
   const vs=lineData.map(x=>x.v),lo=Math.min(...vs),hi=Math.max(...vs),pad=(hi-lo)*0.3||hi*0.02;
   const ticks=niceTicks(lo-pad,hi+pad,4),y0=ticks[0],y1=ticks[ticks.length-1];
+  const stp=ticks.length>1?ticks[1]-ticks[0]:1,dec=stp>=1?0:stp>=0.1?1:2;
   const t0=pd(lineData[0].d).getTime(),t1=pd(lineData[lineData.length-1].d).getTime();
   const X=d=>m.l+(pd(d).getTime()-t0)/(t1-t0||1)*(W-m.l-m.r),Y=v=>m.t+(1-(v-y0)/(y1-y0))*(H-m.t-m.b);
   const path=lineData.map((x,i)=>(i?"L":"M")+X(x.d).toFixed(1)+" "+Y(x.v).toFixed(1)).join(" ");
   const last=lineData[lineData.length-1];
   const area=path+` L${X(last.d)} ${H-m.b} L${X(lineData[0].d)} ${H-m.b} Z`;
-  const g=ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l-8}" y="${Y(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${t.toFixed(t<10?1:0).replace(".",",")}</text>`).join("");
+  const g=ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l-8}" y="${Y(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${t.toFixed(dec).replace(".",",")}</text>`).join("");
   let xl="";const s=new Date(t0);s.setDate(1);s.setMonth(s.getMonth()+1);
   for(let d=new Date(s);d.getTime()<=t1;d.setMonth(d.getMonth()+2)){const x=m.l+(d.getTime()-t0)/(t1-t0)*(W-m.l-m.r);xl+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${MONTHS[d.getMonth()]}</text>`}
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Cijena košarice od ${eur(lineData[0].v)} do ${eur(last.v)}">
@@ -560,7 +564,7 @@ function renderLine(){
 
 /* ================= 2. DEALS ================= */
 const VERD={good:["Pravi popust","v-good",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7"/></svg>'],
-  bad:["Napuhan popust","v-bad",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'],
+  bad:["Prividni popust","v-bad",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'],
   warn:["Kozmetički popust","v-warn",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3.5v5.5"/><circle cx="8" cy="12.3" r=".6" fill="currentColor"/></svg>']};
 function spark(d){
   const W=300,H=64,pts=d.w.map((v,i)=>({i,v})).filter(o=>o.v!=null),reg=d.wr.map((v,i)=>({i,v})).filter(o=>o.v!=null);
@@ -577,7 +581,7 @@ function spark(d){
 function whyText(d){
   const refTxt="cijene koju je isti lanac tražio prije 2 do 4 tjedna ("+eur(d.ref)+")";
   if(d.v==="good")return `Akcijska cijena je ${psh(d.re)} ispod ${refTxt}. Popust je stvaran.`;
-  if(d.v==="bad")return d.re>0.005?`Oglašena usporedna cijena ${eur(d.pr)} viša je od onoga što se zapravo plaćalo. U odnosu na ${refTxt} ušteda je samo ${psh(d.re)}.`:`Oglašena usporedna cijena ${eur(d.pr)} viša je od onoga što se zapravo plaćalo. Akcijska cijena nije niža od ${refTxt}, pa stvarne uštede nema.`;
+  if(d.v==="bad")return d.re>0.005?`Popust se računa od ${eur(d.pr)}, ali u zadnjim tjednima proizvod je stajao manje. U odnosu na ${refTxt} ušteda je samo ${psh(d.re)}.`:`Popust se računa od ${eur(d.pr)}, ali proizvod je i prije 2 do 4 tjedna stajao ${eur(d.ref)}. Nova ušteda ne postoji.`;
   if(d.re<=0.005)return `Akcijska cijena nije niža od ${refTxt}. Proizvod je već tjednima po ovoj cijeni.`;
   return `Stvarna ušteda u odnosu na ${refTxt} je ${psh(d.re)}.`;
 }
@@ -587,15 +591,15 @@ function renderDeals(){
   const n={good:0,bad:0,warn:0};all.forEach(d=>n[d.v]++);
   $("dealSummary").innerHTML=`<div class="sumbox"><div class="v">${all.length}</div><div class="k">akcija na popularnim proizvodima</div></div>
    <div class="sumbox"><div class="v" style="color:var(--good)">${n.good}</div><div class="k">pravih popusta, 10 % i više</div></div>
-   <div class="sumbox"><div class="v" style="color:var(--bad)">${n.bad}</div><div class="k">napuhanih: cijena dignuta prije akcije</div></div>
+   <div class="sumbox"><div class="v" style="color:var(--bad)">${n.bad}</div><div class="k">prividnih: jednako jeftino bilo je i prije</div></div>
    <div class="sumbox"><div class="v" style="color:var(--warn)">${n.warn}</div><div class="k">kozmetičkih: stvarna ušteda ispod 10 %</div></div>`;
-  const opts=[["all","Sve"],["good","Pravi"],["bad","Napuhani"],["warn","Kozmetički"]];
+  const opts=[["all","Sve"],["good","Pravi"],["bad","Prividni"],["warn","Kozmetički"]];
   $("dealFilter").innerHTML=opts.map(([k,l])=>`<button type="button" class="chip" data-f="${k}" aria-pressed="${dealFilter===k}">${l}</button>`).join("");
   const chains=[...new Set(all.map(d=>d.ch))].sort((a,b)=>chainName(a).localeCompare(chainName(b),"hr"));
   if(dealChain!=="all"&&!chains.includes(dealChain))dealChain="all";
   $("dealChain").innerHTML=`<option value="all">Svi lanci</option>`+chains.map(c=>`<option value="${esc(c)}">${esc(chainName(c))}</option>`).join("");$("dealChain").value=dealChain;
   const q=norm(dealQuery.trim()).split(/\s+/).filter(Boolean);
-  const order={bad:0,warn:1,good:2};
+  const order={good:0,bad:1,warn:2};
   const list=all.filter(d=>(dealFilter==="all"||d.v===dealFilter)&&(dealChain==="all"||d.ch===dealChain)&&(!q.length||q.every(w=>norm(d.n+" "+d.b).includes(w))))
     .sort((a,b)=>dealFilter==="all"?(order[a.v]-order[b.v]||(b.cl||b.re)-(a.cl||a.re)):(b.cl||b.re)-(a.cl||a.re));
   $("deals").innerHTML=list.length?list.slice(0,dealShown).map(d=>{const v=VERD[d.v];return `<article class="deal">

@@ -473,6 +473,8 @@ def main():
         real = 1 - special / ref
         if (claimed or 0) < 0.03 and real < 0.05:
             continue
+        if (claimed or 0) > 0.8 or real > 0.8:
+            continue  # almost always a data error (wrong unit, placeholder price)
         if real >= 0.10:
             verdict = "good"
         elif claimed is not None and claimed - real >= 0.10:

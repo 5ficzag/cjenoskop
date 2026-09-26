@@ -415,7 +415,10 @@ async function boot(){
     $("status").innerHTML=`<b class="dot-bad">●</b> Podaci nedostupni`;
   }
 }
-async function getPrices(id){const P=await getJSON("data/prices/"+id+".json");if(D.meta.units==="cents")for(const e in P.p)P.p[e]=P.p[e].map(v=>v==null?null:v/100);return P}
+async function getPrices(id){
+  const P=await getJSON("data/prices/"+id+".json"),sc=D.meta.units==="cents"?0.01:1,n=P.chains.length;
+  for(const e in P.p){const r=P.p[e];if(D.meta.sparse){const a=new Array(n).fill(null);for(let i=0;i<r.length;i+=2)a[r[i]]=r[i+1]*sc;P.p[e]=a}else P.p[e]=r.map(v=>v==null?null:v*sc)}
+  return P}
 async function loadCity(){
   if(!D.prices[cityId])D.prices[cityId]=await getPrices(cityId);
   if(!D.prices.hr)D.prices.hr=await getPrices("hr");
@@ -572,11 +575,11 @@ function spark(d){
     ${pts.map(o=>`<circle cx="${X(o.i)}" cy="${Y(o.v)}" r="3" fill="var(--ink2)"/>`).join("")}</svg>`;
 }
 function whyText(d){
-  const refTxt=d.src==="best30"?"najniže cijene u zadnjih 30 dana koju je objavio trgovac":"cijene koju je lanac tražio prije 2 do 4 tjedna";
+  const refTxt="cijene koju je isti lanac tražio prije 2 do 4 tjedna ("+eur(d.ref)+")";
   if(d.v==="good")return `Akcijska cijena je ${psh(d.re)} ispod ${refTxt}. Popust je stvaran.`;
-  if(d.v==="bad")return d.re>0.01?`Redovna cijena podignuta je prije akcije. U odnosu na ${refTxt} stvarni popust je samo ${psh(d.re)}.`:`Redovna cijena podignuta je prije akcije. Akcijska cijena nije niža od ${refTxt}, pa stvarne uštede nema.`;
-  if(d.re<=0.005)return `Akcijska cijena nije niža od ${refTxt}. Ušteda ne postoji.`;
-  return `Stvarna ušteda u odnosu na ${refTxt} je ${psh(d.re)}, manje nego što natpis sugerira ili ispod 10 %.`;
+  if(d.v==="bad")return d.re>0.005?`Oglašena usporedna cijena ${eur(d.pr)} viša je od onoga što se zapravo plaćalo. U odnosu na ${refTxt} ušteda je samo ${psh(d.re)}.`:`Oglašena usporedna cijena ${eur(d.pr)} viša je od onoga što se zapravo plaćalo. Akcijska cijena nije niža od ${refTxt}, pa stvarne uštede nema.`;
+  if(d.re<=0.005)return `Akcijska cijena nije niža od ${refTxt}. Proizvod je već tjednima po ovoj cijeni.`;
+  return `Stvarna ušteda u odnosu na ${refTxt} je ${psh(d.re)}.`;
 }
 function renderDeals(){
   const all=D.deals.deals;
@@ -594,14 +597,14 @@ function renderDeals(){
   const q=norm(dealQuery.trim()).split(/\s+/).filter(Boolean);
   const order={bad:0,warn:1,good:2};
   const list=all.filter(d=>(dealFilter==="all"||d.v===dealFilter)&&(dealChain==="all"||d.ch===dealChain)&&(!q.length||q.every(w=>norm(d.n+" "+d.b).includes(w))))
-    .sort((a,b)=>dealFilter==="all"?(order[a.v]-order[b.v]||b.cl-a.cl):b.cl-a.cl);
+    .sort((a,b)=>dealFilter==="all"?(order[a.v]-order[b.v]||(b.cl||b.re)-(a.cl||a.re)):(b.cl||b.re)-(a.cl||a.re));
   $("deals").innerHTML=list.length?list.slice(0,dealShown).map(d=>{const v=VERD[d.v];return `<article class="deal">
     <div class="deal-head"><div><div class="n">${esc(d.n)}</div><div class="c">${esc([d.b,d.q].filter(Boolean).join(" · "))} · <b>${esc(chainName(d.ch))}</b></div></div><span class="verdict ${v[1]}">${v[2]}${v[0]}</span></div>
-    <div class="pricerow"><span class="pricetag">${eur(d.sp)}</span><span class="num strike">${eur(d.pr)}</span></div>
-    <div class="claims"><div class="claim"><div class="k">Oglašeno</div><div class="v">−${psh(d.cl)}</div></div><div class="claim"><div class="k">Stvarno</div><div class="v" style="color:var(--${d.v==="good"?"good":d.v==="bad"?"bad":"warn"})">${d.re>0.005?"−"+psh(d.re):"0 %"}</div></div></div>
+    <div class="pricerow"><span class="pricetag">${eur(d.sp)}</span>${d.pr!=null?`<span class="num strike">${eur(d.pr)}</span>`:""}</div>
+    <div class="claims"><div class="claim"><div class="k">Oglašeno</div><div class="v">${d.cl!=null?"−"+psh(d.cl):'<span class="na">nije navedeno</span>'}</div></div><div class="claim"><div class="k">Stvarno</div><div class="v" style="color:var(--${d.v==="good"?"good":d.v==="bad"?"bad":"warn"})">${d.re>0.005?"−"+psh(d.re):"0 %"}</div></div></div>
     <div class="spark">${spark(d)}</div>
     <p class="why">${whyText(d)}</p>
-    <div class="facts"><span>Usporedna <b>${eur(d.ref)}</b></span>${d.b30!=null?`<span>Najniža u 30 dana <b>${eur(d.b30)}</b></span>`:""}${d.anc!=null?`<span>Sidrena (2.5.2025.) <b>${eur(d.anc)}</b></span>`:""}<span>${d.st} ${d.st===1?"prodavaonica":"prodavaonica"}</span></div>
+    <div class="facts"><span>Usporedna <b>${eur(d.ref)}</b></span>${d.b30!=null?`<span>Najniža u 30 dana <b>${eur(d.b30)}</b></span>`:""}${d.anc!=null?`<span>Sidrena (2.5.2025.) <b>${eur(d.anc)}</b></span>`:""}<span>${d.st} ${d.st%10===1&&d.st%100!==11?"prodavaonica":"prodavaonica"}</span></div>
   </article>`}).join(""):`<div class="card empty">Nema akcija za ovaj filter.</div>`;
   $("moreDeals").hidden=list.length<=dealShown;
   $("moreDeals").textContent=`Prikaži još (${list.length-dealShown})`;

@@ -61,7 +61,7 @@ CHAIN_NAMES = {
 # The most widely sold product that fits wins. Quantities in g / ml / kom.
 DEFAULT_BASKET = [
     (r"\bmlijeko\b", r"čokol|kokos|zob|soj|badem|kondenz|prah|kakao|vanil|jagod|bez laktoze", "ml", 1000, 1000, 3),
-    (r"\bkruh\b", r"protein|tost|mrvic|prežgan|keks|pecivo", "g", 400, 1000, 2),
+    (r"\bkruh\b", r"protein|tost|toast|sendvič|mrvic|prežgan|keks|pecivo", "g", 400, 1000, 2),
     (r"\bjaja\b", r"čokol|kinder|prepelič", "kom", 10, 10, 1),
     (r"\bmaslac\b", r"kikiriki|biljn|namaz|kakao", "g", 250, 250, 1),
     (r"\bjogurt\b", r"grčk|voćn|jagod|breskv|vanil|čokol|kokos|piće", "g", 500, 1000, 2),
@@ -77,7 +77,8 @@ DEFAULT_BASKET = [
 MIN_STORES_PRODUCT = 150     # keep EANs sold in at least this many stores...
 MIN_CHAINS_PRODUCT = 3       # ...or in at least this many chains
 MIN_STORES_CITY = 6          # cities with at least this many stores get a file
-MAX_DEALS = 450
+MAX_DEALS = 600
+MAX_PER_CHAIN = 80
 PRICE_MIN, PRICE_MAX = 0.05, 2000.0
 
 EAN_RE = re.compile(r"^\d{8,14}$")
@@ -101,7 +102,7 @@ def fnum(x) -> float | None:
 
 # ---------------------------------------------------------------- naming
 
-LEGAL = re.compile(r"\b(d\.?\s?o\.?\s?o\.?|j\.?\s?d\.?\s?o\.?\s?o\.?|d\.?\s?d\.?|dioni[čc]ko\\s+dru[šs]tv\\w*.*|gmbh.*|s\.?\s?p\.?\s?a\.?|s\.?r\.?l\.?|ltd\.?|inc\.?|a\.?\s?g\.?|k\.?\s?d\.?)(?=\s|$|,)", re.I)
+LEGAL = re.compile(r"\b(d\.?\s?o\.?\s?o\.?|j\.?\s?d\.?\s?o\.?\s?o\.?|d\.?\s?d\.?|dioni[čc]ko\s+dru[šs]tv\w*.*|gmbh.*|s\.?\s?p\.?\s?a\.?|s\.?r\.?l\.?|ltd\.?|inc\.?|a\.?\s?g\.?|k\.?\s?d\.?)(?=\s|$|,)", re.I)
 QTY_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s?(kg|g|gr|mg|ml|cl|dl|l|lt|ltr|kom)\b", re.I)
 UNIT = {"kg": ("g", 1000), "g": ("g", 1), "gr": ("g", 1), "mg": ("g", 0.001), "l": ("ml", 1000), "lt": ("ml", 1000),
         "ltr": ("ml", 1000), "dl": ("ml", 100), "cl": ("ml", 10), "ml": ("ml", 1), "kom": ("kom", 1)}
@@ -179,11 +180,10 @@ def describe(variants: Counter):
         (n, b, q, u), w = item
         return (not is_caps(n), w / total > 0.05, len(n) <= 70, w)
     (n, b, q, u), _ = max(variants.items(), key=score)
-    brand = ""
-    for (_, bb, _, _), _w in variants.most_common():
-        brand = clean_brand(bb)
-        if brand:
-            break
+    brands = [clean_brand(bb) for (_, bb, _, _), _w in variants.most_common()]
+    brands = [x for x in brands if x]
+    low = n.lower()
+    brand = next((x for x in brands if x.split()[0].lower() in low), brands[0] if brands else "")
     qty = None
     for (nn, _, qq, uu), _w in sorted(variants.items(), key=lambda kv: -kv[1]):
         qty = parse_qty(nn, qq, uu)
@@ -272,10 +272,17 @@ def prepare(chain, stores, products, prices):
     products = products.drop_duplicates("product_id")
     products = products[products["barcode"].str.match(EAN_RE)]
     df = prices.merge(products[["product_id", "barcode"]], on="product_id", how="inner")
-    sp = df["special_price"]
-    promo = sp.notna() & (sp > 0) & (sp < df["price"])
-    df["eff"] = df["price"].where(~promo, sp)
-    df["promo"] = promo
+    # Chains publish promotions in two ways:
+    #  A) price = regular shelf price, special_price = lower promo price (Eurospin, KTC)
+    #  B) price = promo price, special_price = same value, best_price_30 = the
+    #     legally required "lowest price in the last 30 days" reference (Konzum, Spar, Lidl…)
+    sp, pc, b30 = df["special_price"], df["price"], df["best_price_30"]
+    a = sp.notna() & (sp > 0) & (sp < pc * 0.995)
+    b = sp.notna() & (sp > 0) & ((sp - pc).abs() <= 0.005)
+    df["promo"] = a | b
+    df["eff"] = pc.where(~a, sp)
+    df["claim"] = pc.where(a, b30.where(b & (b30 > pc * 1.01)))
+    df["reg"] = df["claim"].fillna(pc)
     df = df[(df["eff"] >= PRICE_MIN) & (df["eff"] <= PRICE_MAX)]
     city = stores.drop_duplicates("store_id").set_index("store_id")["city"] if "city" in stores else pd.Series(dtype=str)
     df["city"] = df["store_id"].map(city).fillna("")
@@ -334,7 +341,7 @@ def main():
                 g = df.groupby("barcode")
                 med = g["eff"].median()
                 ce.update({(chain, e): v for e, v in med.items()})
-                cr.update({(chain, e): v for e, v in g["price"].median().items()})
+                cr.update({(chain, e): v for e, v in g["reg"].median().items()})
                 # national: one value per chain (its median) so big chains don't dominate
                 for e, v in med.items():
                     per_ean[e].append(v)
@@ -373,8 +380,8 @@ def main():
                     if not pr.empty:
                         pg = pr.groupby("barcode")
                         agg = pd.DataFrame({
-                            "special": pg["special_price"].median(),
-                            "price": pg["price"].median(),
+                            "special": pg["eff"].median(),
+                            "price": pg["claim"].median(),
                             "best30": pg["best_price_30"].median(),
                             "anchor": pg["anchor_price"].median(),
                             "stores": pg["store_id"].nunique(),
@@ -404,10 +411,15 @@ def main():
         return None if v is None or (isinstance(v, float) and math.isnan(v)) else int(round(float(v) * 100))
 
     def price_file(getter):
+        """Sparse rows: {ean: [chain_index, cents, chain_index, cents, ...]}"""
         p = {}
         for e in keep:
-            row = [getter(c, e) for c in chains]
-            if sum(v is not None for v in row):
+            row = []
+            for i, c in enumerate(chains):
+                v = getter(c, e)
+                if v is not None:
+                    row += [i, v]
+            if row:
                 p[e] = row
         return p
 
@@ -426,7 +438,7 @@ def main():
             continue
         slug = slugify(c)
         write(out / "prices" / f"{slug}.json", {"chains": chains, "p": p})
-        present = [ch for ch in chains if any(v[cidx[ch]] is not None for v in p.values())]
+        present = sorted({chains[v[i]] for v in p.values() for i in range(0, len(v), 2)}, key=chains.index)
         city_meta.append({"id": slug, "name": c, "stores": store_cities[c], "chains": present})
     city_meta.sort(key=lambda x: x["name"])
     log(f"cities: {len(city_meta)}")
@@ -446,42 +458,45 @@ def main():
     for chain, e, row in deals_raw:
         if e not in keep:
             continue
-        special, price = float(row["special"]), float(row["price"])
-        if not (special > 0 and price > 0) or special >= price * 0.97:
+        special = float(row["special"])
+        claim = None if math.isnan(row["price"]) else float(row["price"])
+        if not special > 0:
             continue
-        min_stores = max(1, int(row["chain_stores"] * 0.1))
-        if row["stores"] < min(min_stores, 5):
+        if row["stores"] < min(max(1, int(row["chain_stores"] * 0.1)), 5):
             continue
         refs = [chain_eff[o].get((chain, e)) for o in REF_OFFSETS if o in chain_eff]
         refs = [r for r in refs if r is not None and not math.isnan(r)]
-        ref_src = "weeks"
-        if len(refs) >= 2:
-            ref = float(pd.Series(refs).median())
-        elif not math.isnan(row["best30"]) and row["best30"] > 0:
-            ref, ref_src = float(row["best30"]), "best30"
-        else:
+        if len(refs) < 2:
             continue
-        claimed = 1 - special / price
+        ref = float(pd.Series(refs).median())
+        claimed = (1 - special / claim) if claim and claim > special else None
         real = 1 - special / ref
+        if (claimed or 0) < 0.03 and real < 0.05:
+            continue
         if real >= 0.10:
             verdict = "good"
-        elif claimed - real >= 0.10 and price > ref * 1.05:
+        elif claimed is not None and claimed - real >= 0.10:
             verdict = "bad"
         else:
             verdict = "warn"
         n, b, qty = desc[e]
         deals.append({
             "e": e, "n": n, "b": b, "q": fmt_qty(qty), "ch": chain,
-            "sp": fnum(special), "pr": fnum(price), "ref": fnum(ref), "src": ref_src,
+            "sp": fnum(special), "pr": fnum(claim), "ref": fnum(ref), "src": "weeks",
             "b30": fnum(row["best30"]), "anc": fnum(row["anchor"]),
-            "cl": round(claimed, 3), "re": round(real, 3), "v": verdict,
+            "cl": None if claimed is None else round(claimed, 3), "re": round(real, 3), "v": verdict,
             "st": int(row["stores"]),
             "w": [fnum(chain_eff[o].get((chain, e))) for o in week_offs],
             "wr": [fnum(chain_reg[o].get((chain, e))) for o in week_offs],
         })
-    # most interesting first: popular products, big claimed discounts
-    deals.sort(key=lambda d: -(ean_stores[d["e"]] ** 0.5) * (0.2 + d["cl"]))
-    deals = deals[:MAX_DEALS]
+    # most interesting first: popular products, big discounts; at most MAX_PER_CHAIN per chain
+    deals.sort(key=lambda d: -(ean_stores[d["e"]] ** 0.5) * (0.2 + max(d["cl"] or 0, d["re"])))
+    per_chain, kept = Counter(), []
+    for d in deals:
+        if per_chain[d["ch"]] < MAX_PER_CHAIN:
+            per_chain[d["ch"]] += 1
+            kept.append(d)
+    deals = kept[:MAX_DEALS]
     write(out / "deals.json", {"weeks": [str(picked[o]) for o in week_offs], "deals": deals})
     log(f"deals: {len(deals)} ({Counter(d['v'] for d in deals)})")
 
@@ -512,6 +527,7 @@ def main():
         "basket": basket,
         "counts": {"products": len(products), "deals": len(deals), "stores": sum(store_cities.values())},
         "units": "cents",
+        "sparse": True,
         "source": "https://cijene.dev",
     })
     write(out / "products.json", {"f": ["e", "n", "b", "q", "c", "s"], "d": [[p[k] for k in ("e", "n", "b", "q", "c", "s")] for p in products]})

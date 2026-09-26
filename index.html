@@ -395,8 +395,11 @@ async function boot(){
   applyView();renderSvc();
   try{
     const [meta,products,history,deals]=await Promise.all([getJSON("data/meta.json"),getJSON("data/products.json"),getJSON("data/history.json"),getJSON("data/deals.json")]);
-    D.meta=meta;D.products=products;D.history=history;D.deals=deals;
-    products.forEach(p=>{p._s=norm(p.n+" "+p.b+" "+p.e);D.pby[p.e]=p});
+    D.meta=meta;D.history=history;D.deals=deals;
+    D.products=Array.isArray(products)?products:products.d.map(r=>Object.fromEntries(products.f.map((k,i)=>[k,r[i]])));
+    D.products.forEach(p=>{p._s=norm(p.n+" "+p.b+" "+p.e);D.pby[p.e]=p});
+    const sc=meta.units==="cents"?0.01:1;
+    for(const e in history.p)history.p[e]=history.p[e].map(v=>v==null?null:v*sc);
     if(cityId!=="hr"&&!meta.cities.find(c=>c.id===cityId))cityId="hr";
     $("city").innerHTML=`<option value="hr">Cijela Hrvatska</option>`+meta.cities.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
     $("city").value=cityId;
@@ -412,9 +415,10 @@ async function boot(){
     $("status").innerHTML=`<b class="dot-bad">●</b> Podaci nedostupni`;
   }
 }
+async function getPrices(id){const P=await getJSON("data/prices/"+id+".json");if(D.meta.units==="cents")for(const e in P.p)P.p[e]=P.p[e].map(v=>v==null?null:v/100);return P}
 async function loadCity(){
-  if(!D.prices[cityId])D.prices[cityId]=await getJSON("data/prices/"+cityId+".json");
-  if(!D.prices.hr)D.prices.hr=await getJSON("data/prices/hr.json");
+  if(!D.prices[cityId])D.prices[cityId]=await getPrices(cityId);
+  if(!D.prices.hr)D.prices.hr=await getPrices("hr");
   renderBasket();
 }
 $("city").addEventListener("change",async e=>{cityId=e.target.value;store.set("city",cityId);try{await loadCity()}catch(err){console.error(err)}});

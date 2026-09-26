@@ -54,26 +54,28 @@ CHAIN_NAMES = {
     "branka": "Branka", "bure": "Bure", "dukat": "Dukat", "stanic": "Stanić",
     "stridon": "Stridon", "djelo_vodice": "Djelo Vodice",
     "jadranka_trgovina": "Jadranka", "trgovina_krk": "Trgovina Krk",
+    "trgovina-krk": "Trgovina Krk", "djelo-vodice": "Djelo Vodice",
 }
 
-# Default basket: keyword rules -> most widely sold matching product.
+# Default basket: (regex that must match, regex that must not, unit, min, max, qty)
+# The most widely sold product that fits wins. Quantities in g / ml / kom.
 DEFAULT_BASKET = [
-    ("mlijeko", r"\bmlijeko\b", r"\b(1 ?l|1l|1,0 ?l)\b|^1(\.0+)? ?l$", 3),
-    ("kruh", r"\bkruh\b", None, 2),
-    ("jaja", r"\bjaja\b", r"10", 1),
-    ("maslac", r"\bmaslac\b", None, 1),
-    ("jogurt", r"\bjogurt\b", None, 2),
-    ("kava", r"\bkava\b", None, 1),
-    ("šećer", r"\bšećer\b", None, 1),
-    ("brašno", r"\bbrašno\b", None, 1),
-    ("ulje", r"\bulje\b.*\bsuncokret|\bsuncokretovo ulje\b", None, 1),
-    ("tjestenina", r"\bšpageti\b|\bspaghetti\b", None, 1),
-    ("toaletni papir", r"\btoaletni papir\b", None, 1),
-    ("čokolada", r"\bčokolada\b", None, 1),
+    (r"\bmlijeko\b", r"čokol|kokos|zob|soj|badem|kondenz|prah|kakao|vanil|jagod|bez laktoze", "ml", 1000, 1000, 3),
+    (r"\bkruh\b", r"protein|tost|mrvic|prežgan|keks|pecivo", "g", 400, 1000, 2),
+    (r"\bjaja\b", r"čokol|kinder|prepelič", "kom", 10, 10, 1),
+    (r"\bmaslac\b", r"kikiriki|biljn|namaz|kakao", "g", 250, 250, 1),
+    (r"\bjogurt\b", r"grčk|voćn|jagod|breskv|vanil|čokol|kokos|piće", "g", 500, 1000, 2),
+    (r"\bkava\b", r"instant|kapsul|zrno|3u1|3 u 1|cappuc|frapp|jastuč|pad", "g", 200, 500, 1),
+    (r"šećer", r"vanil|smeđ|prah|kocke|trsk|bez šećer", "g", 1000, 1000, 1),
+    (r"brašno", r"kukuruz|integral|raž|pirov|zob|bez gluten|palač", "g", 1000, 1000, 1),
+    (r"suncokret", r"sjemenk|majonez|margarin", "ml", 1000, 1000, 1),
+    (r"špageti|spaghetti", r"umak|pesto|integral|bez gluten", "g", 500, 500, 1),
+    (r"toaletni papir", r"vlažn", "kom", 8, 16, 1),
+    (r"\bčokolada\b", r"napitak|mlijeko|keks|namaz|preljev|jaja|bomboni", "g", 80, 300, 1),
 ]
 
-MIN_STORES_PRODUCT = 15      # keep EANs sold in at least this many stores...
-MIN_CHAINS_PRODUCT = 2       # ...or in at least this many chains
+MIN_STORES_PRODUCT = 150     # keep EANs sold in at least this many stores...
+MIN_CHAINS_PRODUCT = 3       # ...or in at least this many chains
 MIN_STORES_CITY = 6          # cities with at least this many stores get a file
 MAX_DEALS = 450
 PRICE_MIN, PRICE_MAX = 0.05, 2000.0
@@ -95,6 +97,99 @@ def fnum(x) -> float | None:
     if x is None or (isinstance(x, float) and math.isnan(x)):
         return None
     return round(float(x), 2)
+
+
+# ---------------------------------------------------------------- naming
+
+LEGAL = re.compile(r"\b(d\.?\s?o\.?\s?o\.?|j\.?\s?d\.?\s?o\.?\s?o\.?|d\.?\s?d\.?|dioni[čc]ko\\s+dru[šs]tv\\w*.*|gmbh.*|s\.?\s?p\.?\s?a\.?|s\.?r\.?l\.?|ltd\.?|inc\.?|a\.?\s?g\.?|k\.?\s?d\.?)(?=\s|$|,)", re.I)
+QTY_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s?(kg|g|gr|mg|ml|cl|dl|l|lt|ltr|kom)\b", re.I)
+UNIT = {"kg": ("g", 1000), "g": ("g", 1), "gr": ("g", 1), "mg": ("g", 0.001), "l": ("ml", 1000), "lt": ("ml", 1000),
+        "ltr": ("ml", 1000), "dl": ("ml", 100), "cl": ("ml", 10), "ml": ("ml", 1), "kom": ("kom", 1)}
+
+
+def is_caps(t: str) -> bool:
+    letters = [c for c in t if c.isalpha()]
+    return bool(letters) and sum(c.isupper() for c in letters) / len(letters) > 0.8
+
+
+def sentence(t: str) -> str:
+    t = re.sub(r"\s+", " ", t).strip()
+    if not is_caps(t):
+        return t
+    t = t.lower()
+    for i, c in enumerate(t):
+        if c.isalpha():
+            return t[:i] + c.upper() + t[i + 1:]
+    return t
+
+
+def clean_brand(b: str) -> str:
+    b = LEGAL.sub("", b or "").strip(" ,.-")
+    if b.upper() in ("NO BRAND", "NOBRAND", "N/A", "-", "BEZ BRENDA", "OSTALO"):
+        return ""
+    return b.title() if is_caps(b) else b
+
+
+def parse_num(x: str) -> float | None:
+    x = x.strip().replace(",", ".")
+    if x.startswith("."):
+        x = "0" + x
+    try:
+        return float(x)
+    except ValueError:
+        return None
+
+
+def parse_qty(name: str, q: str, u: str):
+    """Return (amount, base_unit) with base_unit in g/ml/kom, or None."""
+    m = QTY_RE.search(name or "")
+    if m:
+        n = parse_num(m.group(1))
+        unit = UNIT.get(m.group(2).lower())
+        if n and unit:
+            return n * unit[1], unit[0]
+    m = re.match(r"^\s*(\d*[.,]?\d+)\s*([a-zA-Z]*)", q or "")
+    if m:
+        n = parse_num(m.group(1))
+        tok = (m.group(2) or (u or "").split(" ")[0]).lower()
+        unit = UNIT.get(tok)
+        if n and unit:
+            return n * unit[1], unit[0]
+    return None
+
+
+def fmt_qty(qty) -> str:
+    if not qty:
+        return ""
+    n, u = qty
+    if u == "g" and n >= 1000:
+        n, u = n / 1000, "kg"
+    elif u == "ml" and n >= 1000:
+        n, u = n / 1000, "l"
+    if u == "kom" and n <= 1:
+        return ""
+    s = f"{n:.3f}".rstrip("0").rstrip(".").replace(".", ",")
+    return f"{s} {u}"
+
+
+def describe(variants: Counter):
+    """Pick the nicest name among chains' variants; mixed-case names beat ALL CAPS."""
+    total = sum(variants.values())
+    def score(item):
+        (n, b, q, u), w = item
+        return (not is_caps(n), w / total > 0.05, len(n) <= 70, w)
+    (n, b, q, u), _ = max(variants.items(), key=score)
+    brand = ""
+    for (_, bb, _, _), _w in variants.most_common():
+        brand = clean_brand(bb)
+        if brand:
+            break
+    qty = None
+    for (nn, _, qq, uu), _w in sorted(variants.items(), key=lambda kv: -kv[1]):
+        qty = parse_qty(nn, qq, uu)
+        if qty:
+            break
+    return sentence(n), brand, qty
 
 
 # ---------------------------------------------------------------- archives
@@ -217,6 +312,7 @@ def main():
     deals_raw = []
     store_cities = Counter()
     chains_seen = set()
+    diag = {}
 
     # Process newest first so a failure on an old archive still leaves today's data.
     for off in sorted(picked):
@@ -244,6 +340,17 @@ def main():
                     per_ean[e].append(v)
 
                 if off == 0:
+                    sp, pc = df["special_price"], df["price"]
+                    diag[chain] = {
+                        "rows": int(len(df)), "stores": int(df["store_id"].nunique()),
+                        "special_set": round(float(sp.notna().mean()), 4),
+                        "special_lt_price": round(float((sp < pc).mean()), 4),
+                        "special_ge_price": round(float((sp >= pc).mean()), 4),
+                        "best30_set": round(float(df["best_price_30"].notna().mean()), 4),
+                        "best30_lt_price": round(float((df["best_price_30"] < pc * 0.97).mean()), 4),
+                        "anchor_set": round(float(df["anchor_price"].notna().mean()), 4),
+                        "sample": df[sp.notna()].head(3)[["price", "special_price", "best_price_30", "anchor_price"]].astype(float).round(2).values.tolist(),
+                    }
                     chains_seen.add(chain)
                     n_st = g["store_id"].nunique()
                     for e, n in n_st.items():
@@ -283,16 +390,18 @@ def main():
 
     # ---------------- products
     keep = {e for e in names if ean_stores[e] >= MIN_STORES_PRODUCT or len(ean_chains[e]) >= MIN_CHAINS_PRODUCT}
-    products = []
+    products, desc = [], {}
     for e in keep:
-        (n, b, q, u), _ = names[e].most_common(1)[0]
-        qty = f"{q} {u}".strip() if q else u
-        qty = re.sub(r"\.0+\b", "", qty)
-        products.append({"e": e, "n": n, "b": b, "q": qty, "c": len(ean_chains[e]), "s": ean_stores[e]})
+        n, b, qty = describe(names[e])
+        desc[e] = (n, b, qty)
+        products.append({"e": e, "n": n, "b": b, "q": fmt_qty(qty), "c": len(ean_chains[e]), "s": ean_stores[e]})
     products.sort(key=lambda p: -p["s"])
     chains = sorted(chains_seen, key=lambda c: -sum(1 for e in keep if c in ean_chains[e]))
     cidx = {c: i for i, c in enumerate(chains)}
     log(f"products kept: {len(products)}, chains: {chains}")
+
+    def cents(v):
+        return None if v is None or (isinstance(v, float) and math.isnan(v)) else int(round(float(v) * 100))
 
     def price_file(getter):
         p = {}
@@ -303,7 +412,7 @@ def main():
         return p
 
     # national typical price per chain
-    hr = price_file(lambda c, e: fnum(nat_chain_med.get((c, e))))
+    hr = price_file(lambda c, e: cents(nat_chain_med.get((c, e))))
     write(out / "prices" / "hr.json", {"chains": chains, "p": hr})
 
     cities = [c for c, n in store_cities.most_common() if n >= MIN_STORES_CITY]
@@ -312,7 +421,7 @@ def main():
     city_meta = []
     for c, sub in allc.groupby("city"):
         m = {(ch, e): v for ch, e, v in zip(sub["chain"], sub["barcode"], sub["eff"])}
-        p = price_file(lambda ch, e, m=m: fnum(m.get((ch, e))))
+        p = price_file(lambda ch, e, m=m: cents(m.get((ch, e))))
         if len(p) < 200:
             continue
         slug = slugify(c)
@@ -326,7 +435,7 @@ def main():
     offs = sorted(picked, reverse=True)  # oldest first
     hist = {}
     for e in keep:
-        row = [fnum(hist_nat.get(o, {}).get(e)) for o in offs]
+        row = [cents(hist_nat.get(o, {}).get(e)) for o in offs]
         if sum(v is not None for v in row) >= 2:
             hist[e] = row
     write(out / "history.json", {"dates": [str(picked[o]) for o in offs], "p": hist})
@@ -360,10 +469,9 @@ def main():
             verdict = "bad"
         else:
             verdict = "warn"
-        (n, b, q, u), _ = names[e].most_common(1)[0]
-        qty = re.sub(r"\.0+\b", "", f"{q} {u}".strip())
+        n, b, qty = desc[e]
         deals.append({
-            "e": e, "n": n, "b": b, "q": qty, "ch": chain,
+            "e": e, "n": n, "b": b, "q": fmt_qty(qty), "ch": chain,
             "sp": fnum(special), "pr": fnum(price), "ref": fnum(ref), "src": ref_src,
             "b30": fnum(row["best30"]), "anc": fnum(row["anchor"]),
             "cl": round(claimed, 3), "re": round(real, 3), "v": verdict,
@@ -378,16 +486,24 @@ def main():
     log(f"deals: {len(deals)} ({Counter(d['v'] for d in deals)})")
 
     # ---------------- default basket
-    by_name = sorted(products, key=lambda p: -p["s"])
     basket = []
-    for label, pat, qpat, qty in DEFAULT_BASKET:
-        rx = re.compile(pat, re.I)
-        qrx = re.compile(qpat, re.I) if qpat else None
-        for p in by_name:
-            if p["c"] >= 3 and rx.search(p["n"]) and (not qrx or qrx.search(p["q"]) or qrx.search(p["n"])):
-                if p["e"] not in {b[0] for b in basket}:
-                    basket.append([p["e"], qty])
-                    break
+    for inc, exc, unit, lo, hi, q in DEFAULT_BASKET:
+        rin, rex = re.compile(inc, re.I), re.compile(exc, re.I)
+        best = None
+        for p in products:
+            n, b, qty = desc[p["e"]]
+            if p["c"] < 4 or not rin.search(n) or rex.search(n):
+                continue
+            if not qty or qty[1] != unit or not (lo <= qty[0] <= hi):
+                continue
+            if p["e"] in {x[0] for x in basket}:
+                continue
+            best = p
+            break  # products are sorted by number of stores
+        if best:
+            basket.append([best["e"], q])
+    log(f"default basket: {[desc[e][0] for e, _ in basket]}")
+    write(out / "diag.json", diag)
     write(out / "meta.json", {
         "date": str(today),
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -395,9 +511,10 @@ def main():
         "cities": city_meta,
         "basket": basket,
         "counts": {"products": len(products), "deals": len(deals), "stores": sum(store_cities.values())},
+        "units": "cents",
         "source": "https://cijene.dev",
     })
-    write(out / "products.json", products)
+    write(out / "products.json", {"f": ["e", "n", "b", "q", "c", "s"], "d": [[p[k] for k in ("e", "n", "b", "q", "c", "s")] for p in products]})
     shutil.rmtree(tmp, ignore_errors=True)
     log("done")
 

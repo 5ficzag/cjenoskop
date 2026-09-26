@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cjenoskop</title>
+<meta name="description" content="Gdje je tvoja košarica najjeftinija, koliko je poskupjela i je li popust stvaran. Stvarne cijene hrvatskih trgovačkih lanaca, osvježene svaki dan.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23FFD43B'/%3E%3Cpath d='M5 12V6h6l8 8-6 6-8-8z' fill='none' stroke='%232A2200' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+:root{
+  --bg:#EDF0EB; --surface:#FFFFFF; --surface2:#F6F8F5; --ink:#15201D; --ink2:#46534E; --muted:#76837E; --line:#D5DDD7;
+  --accent:#1F4FD1; --accent-soft:#E2E9FB; --accent-ink:#FFFFFF;
+  --tag:#FFD43B; --tag-ink:#2A2200;
+  --good:#147A3B; --good-soft:#DDF3E4; --warn:#A8520A; --warn-soft:#FCEBD6; --bad:#BE2A1F; --bad-soft:#FBE1DE;
+  --shadow:0 1px 2px rgba(20,32,29,.06),0 8px 24px -12px rgba(20,32,29,.18);
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1412; --surface:#161E1B; --surface2:#1C2521; --ink:#E7EEEA; --ink2:#B1BDB8; --muted:#85928D; --line:#2A3531;
+    --accent:#8AA6FF; --accent-soft:#1C2849; --accent-ink:#0E1412;
+    --tag:#F4C623; --tag-ink:#231C00;
+    --good:#5BD98A; --good-soft:#15301F; --warn:#F5B454; --warn-soft:#352612; --bad:#FF8A7E; --bad-soft:#3A1916;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1412; --surface:#161E1B; --surface2:#1C2521; --ink:#E7EEEA; --ink2:#B1BDB8; --muted:#85928D; --line:#2A3531;
+  --accent:#8AA6FF; --accent-soft:#1C2849; --accent-ink:#0E1412;
+  --tag:#F4C623; --tag-ink:#231C00;
+  --good:#5BD98A; --good-soft:#15301F; --warn:#F5B454; --warn-soft:#352612; --bad:#FF8A7E; --bad-soft:#3A1916;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* header */
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:22px 14px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--tag);display:grid;place-items:center;transform:rotate(-6deg);box-shadow:var(--shadow)}
+.logo svg{width:22px;height:22px}
+.brand h1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+.city{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink2)}
+select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 30px 7px 12px;appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;cursor:pointer}
+.demo{font-size:12.5px;color:var(--ink2);background:var(--surface);border:1px dashed var(--line);border-radius:999px;padding:5px 12px}
+.demo b{color:var(--warn)}
+
+/* tabs */
+nav.tabs{display:flex;gap:6px;background:var(--surface);padding:5px;border-radius:14px;border:1px solid var(--line);width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:22px}
+.tab{border:0;background:transparent;padding:9px 16px;border-radius:10px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--ink);background:var(--surface2)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.pill-new{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--tag);color:var(--tag-ink);border-radius:999px;padding:2px 7px}
+
+/* generic */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+h2{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.015em;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;margin:0}
+.sub{color:var(--ink2);margin:4px 0 0;max-width:64ch}
+.pricetag{display:inline-flex;align-items:center;background:var(--tag);color:var(--tag-ink);font-family:var(--mono);font-weight:700;border-radius:6px 10px 10px 6px;padding:2px 9px 2px 12px;position:relative;font-variant-numeric:tabular-nums}
+.pricetag::before{content:"";position:absolute;left:4px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:var(--tag-ink);opacity:.55}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:600;color:var(--ink2);cursor:pointer}
+.chip:hover{border-color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.verdict{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px 3px 8px;white-space:nowrap}
+.verdict svg{width:14px;height:14px}
+.v-good{background:var(--good-soft);color:var(--good)}
+.v-bad{background:var(--bad-soft);color:var(--bad)}
+.v-warn{background:var(--warn-soft);color:var(--warn)}
+.up{color:var(--bad)} .down{color:var(--good)}
+.tooltip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:7px 10px;border-radius:8px;z-index:20;box-shadow:var(--shadow);max-width:240px}
+.tooltip .num{font-weight:700}
+
+/* basket view */
+.grid-basket{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;align-items:start}
+@media (max-width:880px){.grid-basket{grid-template-columns:1fr}}
+.stack{display:grid;gap:18px}
+.add{position:relative;margin-block:14px 6px}
+.add input{width:100%;border:1px solid var(--line);background:var(--surface2);border-radius:12px;padding:10px 12px 10px 38px}
+.add svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--muted)}
+.suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:5;max-height:260px;overflow:auto;padding:4px}
+.suggest button{display:flex;justify-content:space-between;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:8px;cursor:pointer;gap:10px}
+.suggest button:hover,.suggest button:focus-visible{background:var(--accent-soft)}
+.suggest .muted{color:var(--muted);font-size:13px}
+ul.items{list-style:none;margin:0;padding:0}
+ul.items li{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:10px;padding-block:10px;border-bottom:1px solid var(--line)}
+ul.items li:last-child{border-bottom:0}
+.iname{font-weight:600;line-height:1.25}
+.iname span{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{border:0;background:var(--surface2);width:28px;height:28px;cursor:pointer;font-weight:700;color:var(--ink2)}
+.stepper button:hover{background:var(--accent-soft);color:var(--accent)}
+.stepper output{min-width:26px;text-align:center;font-family:var(--mono);font-size:13.5px}
+.iprice{font-family:var(--mono);font-size:13.5px;color:var(--ink2);text-align:right;min-width:64px}
+.rm{border:0;background:transparent;color:var(--muted);cursor:pointer;width:28px;height:28px;border-radius:8px}
+.rm:hover{background:var(--bad-soft);color:var(--bad)}
+.empty{color:var(--muted);padding:18px 0;text-align:center}
+
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.bignum{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:-.03em;line-height:1}
+.bignum small{font-size:20px;font-weight:700;margin-left:2px}
+.bars{display:grid;gap:7px;margin-top:16px}
+.bar{display:grid;grid-template-columns:86px minmax(0,1fr) 78px;align-items:center;gap:10px;font-size:13.5px}
+.bar .lab{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:22px;border-radius:4px;position:relative}
+.bar .fill{position:absolute;inset:0 auto 0 0;background:var(--line);border-radius:0 4px 4px 0;transition:width .35s ease}
+.bar.best .fill{background:var(--accent)}
+.bar .val{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.bar.best .val{font-weight:700}
+.bar .diff{color:var(--muted);font-size:12px;font-family:var(--mono)}
+.combo{margin-top:18px;border-radius:14px;background:var(--accent-soft);padding:14px 16px;display:grid;gap:8px}
+.combo p{margin:0}
+.combo .split{display:flex;flex-wrap:wrap;gap:6px}
+.combo .split span{font-size:12.5px;background:var(--surface);border-radius:999px;padding:3px 10px;color:var(--ink2)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--surface2);border-radius:12px;padding:12px 14px}
+.kpi .k{font-size:12.5px;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.2}
+.chart{margin-top:10px;position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.risers{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.risers li{display:flex;justify-content:space-between;gap:10px;font-size:14px;border-bottom:1px dashed var(--line);padding-bottom:7px}
+.risers li:last-child{border-bottom:0}
+
+/* discounts */
+.summary{display:flex;flex-wrap:wrap;gap:10px;margin-block:16px}
+.sumbox{flex:1 1 170px;border-radius:14px;padding:12px 14px;border:1px solid var(--line);background:var(--surface)}
+.sumbox .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1}
+.sumbox .k{font-size:13px;color:var(--ink2);margin-top:4px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+@media (max-width:360px){.dgrid{grid-template-columns:1fr}}
+.deal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px;align-content:start}
+.deal-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.deal-head .n{font-weight:700;line-height:1.25}
+.deal-head .c{color:var(--muted);font-size:12.5px}
+.claims{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.claim{background:var(--surface2);border-radius:10px;padding:8px 10px}
+.claim .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.claim .v{font-family:var(--mono);font-weight:700;font-size:17px}
+.claim.strike .v{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+.why{font-size:13.5px;color:var(--ink2);margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.facts b{color:var(--ink2);font-family:var(--mono);font-weight:500}
+.spark svg{display:block;width:100%;height:64px;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink2);margin-top:4px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* services */
+.svc-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:16px}
+@media (max-width:880px){.svc-grid{grid-template-columns:1fr}}
+.range{display:flex;flex-wrap:wrap;gap:18px;margin-block:12px 4px}
+.range div .k{font-size:12.5px;color:var(--muted)}
+.range div .v{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em}
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding-block:9px;border-bottom:1px solid var(--line);font-size:14px}
+.plist li:last-child{border-bottom:0}
+.plist .rank{font-family:var(--mono);color:var(--muted);font-size:12.5px}
+.plist .pn{font-weight:600;line-height:1.25}
+.plist .pn span{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.delta{font-family:var(--mono);font-size:12px;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.delta.lo{background:var(--good-soft);color:var(--good)}
+.delta.hi{background:var(--bad-soft);color:var(--bad)}
+.delta.mid{background:var(--surface2);color:var(--muted)}
+.plist li.hl{background:var(--accent-soft)}
+.note{font-size:13px;color:var(--muted);margin-top:14px;max-width:70ch}
+.callout{display:flex;gap:12px;align-items:flex-start;border-radius:14px;background:var(--surface);border:1px solid var(--line);padding:14px 16px}
+.callout .pill-new{flex:none;margin-top:2px}
+.callout p{margin:0;color:var(--ink2);font-size:14px}
+footer{margin-top:34px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+footer a{color:var(--ink2)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.worst{text-align:right}
+.demo b.dot-ok{color:var(--good)} .demo b.dot-bad{color:var(--bad)} .demo b.dot-wait{color:var(--warn)}
+.loadbox{margin-bottom:18px}
+.row-actions{display:flex;gap:16px;justify-content:flex-end;margin-top:10px}
+.linkbtn{border:0;background:none;padding:0;color:var(--ink2);font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkbtn:hover{color:var(--accent)}
+.suggest .sn{display:block;font-weight:600;line-height:1.25}
+.suggest button>span:first-child{min-width:0}
+.suggest .none{padding:10px;color:var(--muted);font-size:14px}
+.iname em{font-style:normal;color:var(--warn)}
+.bar.partial .fill{background:repeating-linear-gradient(135deg,var(--line) 0 5px,transparent 5px 9px)}
+.bar.partial .val{color:var(--muted)}
+.na{font-size:15px;color:var(--muted);font-family:var(--body);font-weight:500}
+.pricerow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.strike{text-decoration:line-through;color:var(--muted)}
+.tools-right{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.minisearch{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 12px;min-width:0;width:190px;max-width:100%}
+.legend i.dash{background:transparent;border-top:2px dashed var(--muted);height:0;border-radius:0}
+.more{display:flex;justify-content:center;margin-top:16px}
+#svcTitle select{font-family:var(--display);font-size:inherit;font-weight:700;padding-block:0;border-radius:8px}
+@media (max-width:520px){
+  ul.items li{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"n n rm" "st pr pr";row-gap:6px}
+  ul.items li .iname{grid-area:n} ul.items li .stepper{grid-area:st;justify-self:start} ul.items li .iprice{grid-area:pr} ul.items li .rm{grid-area:rm}
+  .tab{padding:9px 12px}
+  .bignum{font-size:38px}
+}
+.deal-head .c b{color:var(--ink2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#2A2200" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.4" fill="#2A2200"/></svg></div>
+      <div><h1>Cjenoskop</h1><small>Što se zapravo događa s cijenama oko tebe</small></div>
+    </div>
+    <label class="city" for="city">Grad
+      <select id="city"><option value="hr">Cijela Hrvatska</option></select>
+    </label>
+    <span class="demo" id="status"><b class="dot-wait">●</b> Učitavam podatke…</span>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Moduli">
+    <button class="tab" role="tab" id="tab-basket" aria-controls="view-basket" data-view="basket">Moja košarica</button>
+    <button class="tab" role="tab" id="tab-deals" aria-controls="view-deals" data-view="deals">Detektor popusta</button>
+    <button class="tab" role="tab" id="tab-svc" aria-controls="view-svc" data-view="svc">Cijene usluga <span class="pill-new">od 1.10.</span></button>
+  </nav>
+
+  <div class="card loadbox" id="loadbox"><p class="eyebrow">Samo trenutak</p><h2>Učitavam današnje cijene…</h2><p class="sub">Podaci dolaze iz javnih cjenika trgovačkih lanaca, preuzetih preko cijene.dev.</p></div>
+
+  <!-- 1. KOŠARICA -->
+  <section id="view-basket" role="tabpanel" aria-labelledby="tab-basket" hidden>
+    <div class="grid-basket">
+      <div class="card">
+        <p class="eyebrow">Tvoja tipična kupovina</p>
+        <h2>Košarica</h2>
+        <p class="sub">Dodaj ono što kupuješ svaki tjedan. Računamo gdje je ukupno najjeftinije i koliko je baš tvoja košarica poskupjela.</p>
+        <div class="add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" type="text" placeholder="Traži proizvod, marku ili barkod" autocomplete="off" aria-label="Pretraži proizvode">
+          <div class="suggest" id="suggest" hidden></div>
+        </div>
+        <ul class="items" id="items"></ul>
+        <div class="row-actions"><button type="button" class="linkbtn" id="resetBasket">Vrati početnu košaricu</button><button type="button" class="linkbtn" id="clearBasket">Isprazni</button></div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <p class="eyebrow" id="bestEyebrow">Gdje je danas najjeftinije</p>
+          <div class="hero">
+            <div>
+              <div class="bignum num" id="bestTotal">–</div>
+              <div class="sub" id="bestWhere"></div>
+            </div>
+            <div class="worst">
+              <div class="sub" style="margin:0;max-width:none">Najskuplje</div>
+              <div class="num" style="font-weight:700;font-size:18px" id="worstTotal">–</div>
+            </div>
+          </div>
+          <div class="bars" id="bars"></div>
+          <div class="combo" id="combo" hidden></div>
+          <p class="note" id="priceNote"></p>
+        </div>
+
+        <div class="card">
+          <p class="eyebrow">Tvoja osobna inflacija</p>
+          <h3>Koliko košta ista košarica kroz godinu</h3>
+          <div class="kpis">
+            <div class="kpi"><div class="k">Danas (tipična cijena)</div><div class="v num" id="kNow">–</div></div>
+            <div class="kpi"><div class="k" id="k6l">Promjena u 6 mjeseci</div><div class="v" id="k6">–</div></div>
+            <div class="kpi"><div class="k" id="k12l">Promjena u 12 mjeseci</div><div class="v" id="k12">–</div></div>
+          </div>
+          <div class="chart" id="lineChart"></div>
+          <p class="eyebrow" style="margin-top:16px">Najviše poskupjelo u tvojoj košarici</p>
+          <ul class="risers" id="risers"></ul>
+          <p class="note">Tipična cijena je medijan cijena svih lanaca u Hrvatskoj na taj dan. Proizvodi kojih tada nije bilo u cjenicima ne ulaze u usporedbu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. POPUSTI -->
+  <section id="view-deals" role="tabpanel" aria-labelledby="tab-deals" hidden>
+    <div class="card">
+      <p class="eyebrow">Akcije na dan <span id="dealDate"></span> · cijela Hrvatska</p>
+      <h2>Je li popust stvaran?</h2>
+      <p class="sub">Akcijsku cijenu uspoređujemo s cijenom koju je isti lanac tražio prije 2 do 4 tjedna. Ako je cijena podignuta tik prije akcije, to vidimo.</p>
+      <div class="summary" id="dealSummary"></div>
+      <div class="toolbar">
+        <div class="chips" id="dealFilter" role="group" aria-label="Filtriraj po ocjeni"></div>
+        <div class="tools-right">
+          <input id="dealSearch" class="minisearch" type="search" placeholder="Traži akciju" aria-label="Traži akciju">
+          <label class="city" for="dealChain">Lanac <select id="dealChain"></select></label>
+        </div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background:var(--ink2)"></i>Cijena koju si plaćao, zadnjih 5 tjedana</span>
+        <span><i class="dash"></i>Redovna cijena na polici</span>
+        <span><i style="background:var(--tag)"></i>Tjedan akcije</span>
+      </div>
+    </div>
+    <div class="dgrid" id="deals" style="margin-top:14px"></div>
+    <div class="more"><button type="button" class="chip" id="moreDeals" hidden>Prikaži još</button></div>
+  </section>
+
+  <!-- 3. USLUGE -->
+  <section id="view-svc" role="tabpanel" aria-labelledby="tab-svc" hidden>
+    <div class="callout">
+      <span class="pill-new">Uskoro</span>
+      <p>Od 1. listopada 2026. cjenike moraju objavljivati svi trgovci i pružatelji usluga koji imaju web stranicu (NN 101/2026). <b>Ovi podaci su zasad izmišljeni primjer</b> koji pokazuje kako će usporedba izgledati kad prvi cjenici usluga budu objavljeni.</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">Usporedba usluga · primjer</p>
+      <h2 id="svcTitle">Cijene usluga</h2>
+      <div class="chips" id="svcCats" role="group" aria-label="Vrsta usluge" style="margin-top:14px"></div>
+      <div class="range" id="svcRange"></div>
+      <div class="chart" id="strip"></div>
+    </div>
+    <div class="svc-grid">
+      <div class="card">
+        <p class="eyebrow">Svi pružatelji, od najjeftinijeg · primjer</p>
+        <ul class="plist" id="plist"></ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Usporedba gradova · primjer</p>
+        <h3 id="cityCmpTitle">Medijan po gradu</h3>
+        <div class="bars" id="cityBars"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Cijene iz javnih cjenika trgovaca prema Odluci NN 75/2025 i NN 101/2026, preuzete preko <a href="https://cijene.dev" target="_blank" rel="noopener">cijene.dev</a>. Moguće su greške u izvornim podacima.</span>
+    <span id="footDate"></span>
+  </footer>
+</div>
+<div class="tooltip" id="tip" hidden></div>
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=typeof seed==="string"?hash(seed):seed;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const eur=v=>v==null?"–":v.toFixed(2).replace(".",",")+" €";
+const pct=v=>(v>0?"+":v<0?"−":"")+Math.abs(v*100).toFixed(1).replace(".",",")+" %";
+const psh=v=>Math.round(v*100)+" %";
+const median=a=>{const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem("cjenoskop:"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("cjenoskop:"+k,JSON.stringify(v))}catch(e){}}};
+const MONTHS=["sij","velj","ožu","tra","svi","lip","srp","kol","ruj","lis","stu","pro"];
+const MONTHS_G=["siječnja","veljače","ožujka","travnja","svibnja","lipnja","srpnja","kolovoza","rujna","listopada","studenoga","prosinca"];
+const pd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const dLong=s=>{const d=pd(s);return d.getDate()+". "+MONTHS_G[d.getMonth()]+" "+d.getFullYear()+"."};
+const dShort=s=>{const d=pd(s);return d.getDate()+". "+(d.getMonth()+1)+". "+d.getFullYear()+"."};
+const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d");
+const tip=$("tip");
+function showTip(html,x,y){tip.innerHTML=html;tip.hidden=false;const r=tip.getBoundingClientRect();let L=x+14,T=y-r.height-12;if(L+r.width>innerWidth-8)L=x-r.width-14;if(T<8)T=y+16;tip.style.left=L+"px";tip.style.top=T+"px"}
+function hideTip(){tip.hidden=true}
+function niceTicks(min,max,n){const span=max-min||1,step0=span/n,mag=Math.pow(10,Math.floor(Math.log10(step0))),f=step0/mag,step=(f<1.5?1:f<3?2:f<7?5:10)*mag;const lo=Math.floor(min/step)*step,hi=Math.ceil(max/step)*step,t=[];for(let v=lo;v<=hi+1e-9;v+=step)t.push(+v.toFixed(6));return t}
+async function getJSON(p){const r=await fetch(p,{cache:"no-cache"});if(!r.ok)throw new Error(p+" "+r.status);return r.json()}
+
+/* ---------- state ---------- */
+const D={meta:null,products:[],pby:{},prices:{},history:null,deals:null};
+let cityId=store.get("city","hr");
+let view=store.get("view","basket");
+let basket=store.get("basket2",null); // {ean: qty}
+let dealFilter="all",dealChain="all",dealQuery="",dealShown=30;
+let svcCat=store.get("svc","sisanje-z");
+const chainName=id=>{const c=D.meta&&D.meta.chains.find(c=>c.id===id);return c?c.name:id};
+const cityName=()=>cityId==="hr"?"Hrvatska":(D.meta.cities.find(c=>c.id===cityId)||{}).name||"";
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.view;store.set("view",view);applyView()}));
+function applyView(){
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.view===view)));
+  const ready=!!D.meta;
+  $("loadbox").hidden=ready||view==="svc";
+  $("view-basket").hidden=!(ready&&view==="basket");$("view-deals").hidden=!(ready&&view==="deals");$("view-svc").hidden=view!=="svc";
+  hideTip();if(view==="basket")renderLine();if(view==="svc")renderStrip();
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  applyView();renderSvc();
+  try{
+    const [meta,products,history,deals]=await Promise.all([getJSON("data/meta.json"),getJSON("data/products.json"),getJSON("data/history.json"),getJSON("data/deals.json")]);
+    D.meta=meta;D.products=products;D.history=history;D.deals=deals;
+    products.forEach(p=>{p._s=norm(p.n+" "+p.b+" "+p.e);D.pby[p.e]=p});
+    if(cityId!=="hr"&&!meta.cities.find(c=>c.id===cityId))cityId="hr";
+    $("city").innerHTML=`<option value="hr">Cijela Hrvatska</option>`+meta.cities.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+    $("city").value=cityId;
+    if(!basket||!Object.keys(basket).some(e=>D.pby[e]))basket=Object.fromEntries(meta.basket);
+    Object.keys(basket).forEach(e=>{if(!D.pby[e])delete basket[e]});
+    $("status").innerHTML=`<b class="dot-ok">●</b> Cijene na dan ${dShort(meta.date)}`;
+    $("footDate").textContent=`${meta.counts.products.toLocaleString("hr-HR")} proizvoda · ${meta.counts.stores.toLocaleString("hr-HR")} prodavaonica · osvježeno ${dLong(meta.date)}`;
+    await loadCity();
+    renderDeals();applyView();
+  }catch(e){
+    console.error(e);
+    $("loadbox").innerHTML=`<p class="eyebrow">Podaci nisu dostupni</p><h2>Današnje cijene se nisu učitale</h2><p class="sub">Provjeri internetsku vezu i osvježi stranicu. Ako se greška ponavlja, dnevno preuzimanje podataka možda još nije završilo.</p>`;
+    $("status").innerHTML=`<b class="dot-bad">●</b> Podaci nedostupni`;
+  }
+}
+async function loadCity(){
+  if(!D.prices[cityId])D.prices[cityId]=await getJSON("data/prices/"+cityId+".json");
+  if(!D.prices.hr)D.prices.hr=await getJSON("data/prices/hr.json");
+  renderBasket();
+}
+$("city").addEventListener("change",async e=>{cityId=e.target.value;store.set("city",cityId);try{await loadCity()}catch(err){console.error(err)}});
+
+/* ================= 1. BASKET ================= */
+function cityPrices(){return D.prices[cityId]||D.prices.hr}
+function minPrice(e){const P=cityPrices(),row=P.p[e]||(D.prices.hr.p[e]);if(!row)return null;const v=row.filter(x=>x!=null);return v.length?Math.min(...v):null}
+const search=$("search"),sug=$("suggest");
+function renderSuggest(){
+  if(!D.meta)return;
+  const q=norm(search.value.trim());
+  if(q.length<2){sug.hidden=true;return}
+  const words=q.split(/\s+/);
+  const list=[];for(const p of D.products){if(basket[p.e])continue;if(words.every(w=>p._s.includes(w))){list.push(p);if(list.length>=12)break}}
+  if(!list.length){sug.innerHTML=`<div class="none">Nema proizvoda za „${esc(search.value)}”.</div>`;sug.hidden=false;return}
+  sug.innerHTML=list.map(p=>{const m=minPrice(p.e);return `<button type="button" data-id="${p.e}"><span><span class="sn">${esc(p.n)}</span><span class="muted">${esc([p.b,p.q].filter(Boolean).join(" · "))} · ${p.c} ${p.c===1?"lanac":p.c<5?"lanca":"lanaca"}</span></span><span class="muted num">${m!=null?"od "+eur(m):""}</span></button>`}).join("");
+  sug.hidden=false;
+}
+let st;search.addEventListener("input",()=>{clearTimeout(st);st=setTimeout(renderSuggest,90)});search.addEventListener("focus",renderSuggest);
+search.addEventListener("keydown",e=>{if(e.key==="Enter"){const b=sug.querySelector("button");if(b)b.click()}if(e.key==="Escape"){sug.hidden=true}});
+sug.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;basket[b.dataset.id]=1;search.value="";sug.hidden=true;saveBasket();search.focus()});
+document.addEventListener("click",e=>{if(!e.target.closest(".add"))sug.hidden=true});
+$("resetBasket").addEventListener("click",()=>{basket=Object.fromEntries(D.meta.basket);saveBasket()});
+$("clearBasket").addEventListener("click",()=>{basket={};saveBasket()});
+function saveBasket(){store.set("basket2",basket);renderBasket()}
+$("items").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;const id=b.dataset.id;
+  if(b.dataset.act==="plus")basket[id]=Math.min(50,basket[id]+1);
+  if(b.dataset.act==="minus"){basket[id]-=1;if(basket[id]<=0)delete basket[id]}
+  if(b.dataset.act==="rm")delete basket[id];
+  saveBasket();
+});
+
+function renderBasket(){
+  if(!D.meta)return;
+  const P=cityPrices(),chains=P.chains,ids=Object.keys(basket).filter(e=>D.pby[e]);
+  const local=cityId!=="hr";
+  $("bestEyebrow").textContent=local?`Gdje je danas najjeftinije · ${cityName()}`:"Gdje je danas najjeftinije · cijela Hrvatska";
+  $("priceNote").textContent=local?`Za svaki lanac uzimamo najnižu cijenu u nekoj od njegovih prodavaonica u gradu ${cityName()}. Cijene se razlikuju između prodavaonica istog lanca.`:"Za cijelu Hrvatsku prikazujemo tipičnu (medijan) cijenu svakog lanca. Odaberi grad za cijene u tvojim prodavaonicama.";
+  $("items").innerHTML=ids.length?ids.map(e=>{const p=D.pby[e],row=P.p[e],m=minPrice(e);
+    const avail=row?row.filter(x=>x!=null).length:0;
+    return `<li><div class="iname">${esc(p.n)}<span>${esc([p.b,p.q].filter(Boolean).join(" · "))}${m!=null?" · od "+eur(m):""}${local&&!avail?' · <em>nema u ovom gradu</em>':""}</span></div>
+    <div class="stepper"><button type="button" data-act="minus" data-id="${e}" aria-label="Manje: ${esc(p.n)}">−</button><output>${basket[e]}</output><button type="button" data-act="plus" data-id="${e}" aria-label="Više: ${esc(p.n)}">+</button></div>
+    <div class="iprice">${m!=null?eur(m*basket[e]):"–"}</div>
+    <button type="button" class="rm" data-act="rm" data-id="${e}" aria-label="Ukloni ${esc(p.n)}">✕</button></li>`}).join("")
+    :`<li class="empty" style="display:block">Košarica je prazna. Dodaj prvi proizvod gore.</li>`;
+  if(!ids.length){$("bars").innerHTML="";$("combo").hidden=true;$("bestTotal").textContent="–";$("bestWhere").textContent="";$("worstTotal").textContent="–";["kNow","k6","k12"].forEach(k=>$(k).textContent="–");lineData=null;$("lineChart").innerHTML="";$("risers").innerHTML="";return}
+
+  // per-chain totals
+  const n=ids.length;
+  let rows=chains.map((ch,i)=>{let t=0,have=0;ids.forEach(e=>{const r=P.p[e];const v=r?r[i]:null;if(v!=null){t+=v*basket[e];have++}});return{ch,i,t,have,miss:n-have}}).filter(r=>r.have>0);
+  rows.sort((a,b)=>a.miss-b.miss||a.t-b.t);
+  const full=rows.filter(r=>r.miss===0);
+  const shown=rows.filter(r=>r.have>=Math.max(1,Math.ceil(n*0.5))).slice(0,10);
+  if(full.length){
+    const best=full[0],worst=full[full.length-1];
+    $("bestTotal").innerHTML=best.t.toFixed(2).replace(".",",")+"<small>€</small>";
+    $("bestWhere").innerHTML=`u <b>${esc(chainName(best.ch))}</b> za ${ids.reduce((s,e)=>s+basket[e],0)} kom.`+(full.length>1?` · ušteda <b class="num">${eur(worst.t-best.t)}</b> u odnosu na najskuplji lanac koji ima sve`:"");
+    $("worstTotal").textContent=full.length>1?eur(worst.t)+" · "+chainName(worst.ch):"–";
+  }else{
+    $("bestTotal").innerHTML="–";
+    $("bestWhere").innerHTML="Nijedan lanac nema sve proizvode iz košarice. Pogledaj kombinaciju dvije trgovine ispod.";
+    $("worstTotal").textContent="–";
+  }
+  const maxT=Math.max(...shown.map(r=>r.t));
+  $("bars").innerHTML=shown.map((r,k)=>{const best=full.length&&r===full[0];return `<div class="bar${best?" best":""}${r.miss?" partial":""}"><span class="lab">${esc(chainName(r.ch))}</span><span class="track"><span class="fill" style="width:${(r.t/maxT*100).toFixed(1)}%"></span></span><span class="val">${eur(r.t)}${r.miss?`<br><span class="diff">nema ${r.miss} art.</span>`:(full.length&&!best?`<br><span class="diff">+${eur(r.t-full[0].t)}</span>`:"")}</span></div>`}).join("");
+
+  // best pair covering everything
+  let bp=null;const cand=rows.slice(0,12);
+  for(let a=0;a<cand.length;a++)for(let b=a+1;b<cand.length;b++){
+    const A=cand[a].i,B=cand[b].i;let t=0,ok=true,split={};
+    for(const e of ids){const r=P.p[e]||[];const pa=r[A],pb=r[B];if(pa==null&&pb==null){ok=false;break}
+      const useA=pb==null||(pa!=null&&pa<=pb);t+=(useA?pa:pb)*basket[e];const w=useA?A:B;split[w]=(split[w]||0)+1}
+    if(ok&&(!bp||t<bp.t))bp={a:A,b:B,t,split};
+  }
+  const cb=$("combo");
+  if(bp&&(!full.length||full[0].t-bp.t>0.3)){
+    const save=full.length?full[0].t-bp.t:null;
+    cb.innerHTML=`<p><b>${full.length?"Pametnije u dvije trgovine":"Cijela košarica u dvije trgovine"}:</b> ${esc(chainName(chains[bp.a]))} + ${esc(chainName(chains[bp.b]))} = <b class="num">${eur(bp.t)}</b>${save!=null?`, još <b class="num">${eur(save)}</b> manje.`:"."}</p>
+      <div class="split">${[bp.a,bp.b].map(i=>`<span>${esc(chainName(chains[i]))}: ${bp.split[i]||0} art.</span>`).join("")}</div>`;
+    cb.hidden=false;
+  }else if(full.length){
+    cb.innerHTML=`<p><b>${esc(chainName(full[0].ch))}</b> je dovoljno dobar za cijelu košaricu. Podjela na dvije trgovine uštedjela bi manje od 30 centi.</p>`;cb.hidden=false;
+  }else cb.hidden=true;
+
+  renderInflation(ids);
+}
+
+/* ---- inflation ---- */
+let lineData=null;
+function renderInflation(ids){
+  const H=D.history,dates=H.dates,L=dates.length-1;
+  const now=ids.reduce((s,e)=>{const r=H.p[e];return s+(r&&r[L]!=null?r[L]*basket[e]:0)},0);
+  // chain-linked: value at date d = today's total × ratio over items priced on both days
+  const vals=dates.map((d,k)=>{let a=0,b=0;ids.forEach(e=>{const r=H.p[e];if(r&&r[k]!=null&&r[L]!=null){a+=r[k]*basket[e];b+=r[L]*basket[e]}});return b>0?now*a/b:null});
+  $("kNow").textContent=now?eur(now):"–";
+  const cls=v=>v>0.001?"up":v<-0.001?"down":"";
+  const today=pd(dates[L]);
+  const at=days=>{let best=null,bd=1e9;dates.forEach((d,k)=>{const dd=Math.abs((today-pd(d))/864e5-days);if(dd<bd&&vals[k]!=null){bd=dd;best=k}});return bd<=20?best:null};
+  const i6=at(182),i12=at(365);
+  $("k6").innerHTML=i6!=null&&vals[i6]?`<span class="${cls(now/vals[i6]-1)}">${pct(now/vals[i6]-1)}</span>`:`<span class="na">nema podataka</span>`;
+  $("k12").innerHTML=i12!=null&&vals[i12]?`<span class="${cls(now/vals[i12]-1)}">${pct(now/vals[i12]-1)}</span>`:`<span class="na">nema podataka</span>`;
+  lineData=dates.map((d,k)=>({d,v:vals[k]})).filter(x=>x.v!=null);
+  renderLine();
+  const first=k=>{const r=H.p[k];if(!r||r[L]==null)return null;for(let j=0;j<L;j++)if(r[j]!=null)return{j,ch:r[L]/r[j]-1,now:r[L]};return null};
+  const risers=ids.map(e=>({p:D.pby[e],x:first(e)})).filter(o=>o.x).sort((a,b)=>b.x.ch-a.x.ch).slice(0,5);
+  $("risers").innerHTML=risers.length?risers.map(o=>`<li><span>${esc(o.p.n)} <span style="color:var(--muted)">${esc(o.p.q)}</span></span><span class="num ${cls(o.x.ch)}" title="od ${dShort(dates[o.x.j])}">${pct(o.x.ch)} · ${eur(o.x.now)}</span></li>`).join(""):`<li><span style="color:var(--muted)">Nema dovoljno povijesnih podataka za ove proizvode.</span></li>`;
+}
+function renderLine(){
+  const el=$("lineChart");if(!lineData||lineData.length<2||el.offsetParent===null){if(el&&lineData&&lineData.length<2)el.innerHTML="";return}
+  const W=Math.max(280,el.clientWidth),H=210,m={l:48,r:14,t:14,b:26};
+  const vs=lineData.map(x=>x.v),lo=Math.min(...vs),hi=Math.max(...vs),pad=(hi-lo)*0.3||hi*0.02;
+  const ticks=niceTicks(lo-pad,hi+pad,4),y0=ticks[0],y1=ticks[ticks.length-1];
+  const t0=pd(lineData[0].d).getTime(),t1=pd(lineData[lineData.length-1].d).getTime();
+  const X=d=>m.l+(pd(d).getTime()-t0)/(t1-t0||1)*(W-m.l-m.r),Y=v=>m.t+(1-(v-y0)/(y1-y0))*(H-m.t-m.b);
+  const path=lineData.map((x,i)=>(i?"L":"M")+X(x.d).toFixed(1)+" "+Y(x.v).toFixed(1)).join(" ");
+  const last=lineData[lineData.length-1];
+  const area=path+` L${X(last.d)} ${H-m.b} L${X(lineData[0].d)} ${H-m.b} Z`;
+  const g=ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l-8}" y="${Y(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${t.toFixed(t<10?1:0).replace(".",",")}</text>`).join("");
+  let xl="";const s=new Date(t0);s.setDate(1);s.setMonth(s.getMonth()+1);
+  for(let d=new Date(s);d.getTime()<=t1;d.setMonth(d.getMonth()+2)){const x=m.l+(d.getTime()-t0)/(t1-t0)*(W-m.l-m.r);xl+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${MONTHS[d.getMonth()]}</text>`}
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Cijena košarice od ${eur(lineData[0].v)} do ${eur(last.v)}">
+    <defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    ${g}${xl}<path d="${area}" fill="url(#ga)"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    ${lineData.map((x,i)=>`<circle cx="${X(x.d)}" cy="${Y(x.v)}" r="${i===lineData.length-1?5:3.5}" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`).join("")}
+    <g id="xh" style="display:none"><line id="xhl" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink2)" stroke-dasharray="3 3"/><circle id="xhc" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></g>
+    <rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="transparent" id="hit"/></svg>`;
+  const svg=el.querySelector("svg"),hit=svg.querySelector("#hit"),xh=svg.querySelector("#xh");
+  const move=ev=>{const pt=ev.touches?ev.touches[0]:ev;const r=svg.getBoundingClientRect();const x=(pt.clientX-r.left)*W/r.width;
+    let i=0,bd=1e9;lineData.forEach((o,k)=>{const dd=Math.abs(X(o.d)-x);if(dd<bd){bd=dd;i=k}});const o=lineData[i];
+    xh.style.display="";const l=svg.querySelector("#xhl");l.setAttribute("x1",X(o.d));l.setAttribute("x2",X(o.d));const cc=svg.querySelector("#xhc");cc.setAttribute("cx",X(o.d));cc.setAttribute("cy",Y(o.v));
+    showTip(`${dLong(o.d)}<br><span class="num">${eur(o.v)}</span>${i<lineData.length-1?" · "+pct(last.v/o.v-1)+" do danas":""}`,pt.clientX,pt.clientY)};
+  hit.addEventListener("mousemove",move);hit.addEventListener("touchmove",move,{passive:true});
+  const out=()=>{xh.style.display="none";hideTip()};hit.addEventListener("mouseleave",out);hit.addEventListener("touchend",out);
+}
+
+/* ================= 2. DEALS ================= */
+const VERD={good:["Pravi popust","v-good",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7"/></svg>'],
+  bad:["Napuhan popust","v-bad",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'],
+  warn:["Kozmetički popust","v-warn",'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3.5v5.5"/><circle cx="8" cy="12.3" r=".6" fill="currentColor"/></svg>']};
+function spark(d){
+  const W=300,H=64,pts=d.w.map((v,i)=>({i,v})).filter(o=>o.v!=null),reg=d.wr.map((v,i)=>({i,v})).filter(o=>o.v!=null);
+  const all=[...pts,...reg].map(o=>o.v);if(all.length<2)return "";
+  const lo=Math.min(...all)*0.94,hi=Math.max(...all)*1.04,n=d.w.length-1;
+  const X=i=>6+i*(W-12)/n,Y=v=>H-6-(v-lo)/(hi-lo||1)*(H-14);
+  const line=a=>a.map((o,k)=>(k?"L":"M")+X(o.i).toFixed(1)+" "+Y(o.v).toFixed(1)).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cijena zadnjih 5 tjedana">
+    <rect x="${X(n-0.5)}" y="0" width="${W-X(n-0.5)}" height="${H}" fill="var(--tag)" opacity=".45" rx="3"/>
+    <path d="${line(reg)}" fill="none" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+    <path d="${line(pts)}" fill="none" stroke="var(--ink2)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+    ${pts.map(o=>`<circle cx="${X(o.i)}" cy="${Y(o.v)}" r="3" fill="var(--ink2)"/>`).join("")}</svg>`;
+}
+function whyText(d){
+  const refTxt=d.src==="best30"?"najniže cijene u zadnjih 30 dana koju je objavio trgovac":"cijene koju je lanac tražio prije 2 do 4 tjedna";
+  if(d.v==="good")return `Akcijska cijena je ${psh(d.re)} ispod ${refTxt}. Popust je stvaran.`;
+  if(d.v==="bad")return d.re>0.01?`Redovna cijena podignuta je prije akcije. U odnosu na ${refTxt} stvarni popust je samo ${psh(d.re)}.`:`Redovna cijena podignuta je prije akcije. Akcijska cijena nije niža od ${refTxt}, pa stvarne uštede nema.`;
+  if(d.re<=0.005)return `Akcijska cijena nije niža od ${refTxt}. Ušteda ne postoji.`;
+  return `Stvarna ušteda u odnosu na ${refTxt} je ${psh(d.re)}, manje nego što natpis sugerira ili ispod 10 %.`;
+}
+function renderDeals(){
+  const all=D.deals.deals;
+  $("dealDate").textContent=dShort(D.meta.date);
+  const n={good:0,bad:0,warn:0};all.forEach(d=>n[d.v]++);
+  $("dealSummary").innerHTML=`<div class="sumbox"><div class="v">${all.length}</div><div class="k">akcija na popularnim proizvodima</div></div>
+   <div class="sumbox"><div class="v" style="color:var(--good)">${n.good}</div><div class="k">pravih popusta, 10 % i više</div></div>
+   <div class="sumbox"><div class="v" style="color:var(--bad)">${n.bad}</div><div class="k">napuhanih: cijena dignuta prije akcije</div></div>
+   <div class="sumbox"><div class="v" style="color:var(--warn)">${n.warn}</div><div class="k">kozmetičkih: stvarna ušteda ispod 10 %</div></div>`;
+  const opts=[["all","Sve"],["good","Pravi"],["bad","Napuhani"],["warn","Kozmetički"]];
+  $("dealFilter").innerHTML=opts.map(([k,l])=>`<button type="button" class="chip" data-f="${k}" aria-pressed="${dealFilter===k}">${l}</button>`).join("");
+  const chains=[...new Set(all.map(d=>d.ch))].sort((a,b)=>chainName(a).localeCompare(chainName(b),"hr"));
+  if(dealChain!=="all"&&!chains.includes(dealChain))dealChain="all";
+  $("dealChain").innerHTML=`<option value="all">Svi lanci</option>`+chains.map(c=>`<option value="${esc(c)}">${esc(chainName(c))}</option>`).join("");$("dealChain").value=dealChain;
+  const q=norm(dealQuery.trim()).split(/\s+/).filter(Boolean);
+  const order={bad:0,warn:1,good:2};
+  const list=all.filter(d=>(dealFilter==="all"||d.v===dealFilter)&&(dealChain==="all"||d.ch===dealChain)&&(!q.length||q.every(w=>norm(d.n+" "+d.b).includes(w))))
+    .sort((a,b)=>dealFilter==="all"?(order[a.v]-order[b.v]||b.cl-a.cl):b.cl-a.cl);
+  $("deals").innerHTML=list.length?list.slice(0,dealShown).map(d=>{const v=VERD[d.v];return `<article class="deal">
+    <div class="deal-head"><div><div class="n">${esc(d.n)}</div><div class="c">${esc([d.b,d.q].filter(Boolean).join(" · "))} · <b>${esc(chainName(d.ch))}</b></div></div><span class="verdict ${v[1]}">${v[2]}${v[0]}</span></div>
+    <div class="pricerow"><span class="pricetag">${eur(d.sp)}</span><span class="num strike">${eur(d.pr)}</span></div>
+    <div class="claims"><div class="claim"><div class="k">Oglašeno</div><div class="v">−${psh(d.cl)}</div></div><div class="claim"><div class="k">Stvarno</div><div class="v" style="color:var(--${d.v==="good"?"good":d.v==="bad"?"bad":"warn"})">${d.re>0.005?"−"+psh(d.re):"0 %"}</div></div></div>
+    <div class="spark">${spark(d)}</div>
+    <p class="why">${whyText(d)}</p>
+    <div class="facts"><span>Usporedna <b>${eur(d.ref)}</b></span>${d.b30!=null?`<span>Najniža u 30 dana <b>${eur(d.b30)}</b></span>`:""}${d.anc!=null?`<span>Sidrena (2.5.2025.) <b>${eur(d.anc)}</b></span>`:""}<span>${d.st} ${d.st===1?"prodavaonica":"prodavaonica"}</span></div>
+  </article>`}).join(""):`<div class="card empty">Nema akcija za ovaj filter.</div>`;
+  $("moreDeals").hidden=list.length<=dealShown;
+  $("moreDeals").textContent=`Prikaži još (${list.length-dealShown})`;
+}
+$("dealFilter").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;dealFilter=b.dataset.f;dealShown=30;renderDeals()});
+$("dealChain").addEventListener("change",e=>{dealChain=e.target.value;dealShown=30;renderDeals()});
+let dq;$("dealSearch").addEventListener("input",e=>{clearTimeout(dq);dq=setTimeout(()=>{dealQuery=e.target.value;dealShown=30;renderDeals()},120)});
+$("moreDeals").addEventListener("click",()=>{dealShown+=30;renderDeals()});
+
+/* ================= 3. SERVICES (example data until 1.10.2026) ================= */
+const SCITIES=[{id:"cakovec",name:"Čakovec",s:0.88,h:["Centar","Martane","Buzovec","Jug","Savska Ves"]},{id:"varazdin",name:"Varaždin",s:0.93,h:["Centar","Banfica","Biškupec","Jalkovec"]},{id:"zagreb",name:"Zagreb",s:1.18,h:["Trešnjevka","Maksimir","Novi Zagreb","Dubrava","Trnje","Špansko"]},{id:"rijeka",name:"Rijeka",s:1.08,h:["Centar","Kantrida","Zamet","Trsat"]},{id:"split",name:"Split",s:1.12,h:["Bačvice","Split 3","Meje","Žnjan"]},{id:"osijek",name:"Osijek",s:0.86,h:["Centar","Donji grad","Retfala","Sjenjak"]}];
+const SVC=[
+  {id:"sisanje-z",name:"Žensko šišanje i feniranje",short:"Žensko šišanje",base:24,pre:["Salon","Frizerski studio","Hair studio"],nm:["Lana","Nika","Tena","Iris","Klara","Aurora","Viola","Luna","Ema","Zara"]},
+  {id:"sisanje-m",name:"Muško šišanje",short:"Muško šišanje",base:13,pre:["Barber","Brijačnica","Frizer"],nm:["Oštrica","Klasik","Brk","Fade","Stari zanat","Škare","Gentleman","Češalj"]},
+  {id:"servis",name:"Mali servis auta",short:"Mali servis auta",base:145,pre:["Autoservis","Auto centar","Servis"],nm:["Klip","Zupčanik","Brzi kotač","Ventil","Kardan","Kvačilo","Pogon"]},
+  {id:"gume",name:"Zamjena i balansiranje 4 gume",short:"Zamjena guma",base:42,pre:["Vulkanizer","Servis guma"],nm:["Profil","Felga","Kotač","Asfalt","Dezen","Grip","Rola"]},
+  {id:"teretana",name:"Mjesečna članarina u teretani",short:"Teretana",base:38,pre:["Fitness","Gym","Studio"],nm:["Snaga","Pulse","Forma","Atlas","Titan","Balans","Ritam"]},
+  {id:"vet",name:"Veterinarski pregled",short:"Veterinar",base:31,pre:["Vet centar","Ambulanta"],nm:["Šapa","Njuška","Repić","Arka","Lavić","Pahulja"]}
+];
+function providers(cat,c){const r=rng("svc:"+cat.id+":"+c.id),n=8+Math.floor(r()*5),out=[],used=new Set();
+  for(let i=0;i<n;i++){let nm,g=0;do{nm=cat.pre[Math.floor(r()*cat.pre.length)]+" "+cat.nm[Math.floor(r()*cat.nm.length)]}while(used.has(nm)&&++g<30);used.add(nm);
+    const z=(r()+r()+r()-1.5);let p=cat.base*c.s*Math.exp(z*0.32);p=p>60?Math.round(p/5)*5:Math.round(p);out.push({name:nm,hood:c.h[Math.floor(r()*c.h.length)],price:p})}
+  return out.sort((a,b)=>a.price-b.price)}
+const eur0=v=>(Number.isInteger(v)?v+",00":v.toFixed(2).replace(".",","))+" €";
+let stripData=null,svcCity=store.get("svcCity","zagreb");
+function renderSvc(){
+  const cat=SVC.find(s=>s.id===svcCat)||SVC[0],c=SCITIES.find(x=>x.id===svcCity)||SCITIES[2],list=providers(cat,c),prices=list.map(p=>p.price),med=median(prices);
+  $("svcTitle").innerHTML=`${esc(cat.name)} · <select id="svcCity" aria-label="Grad">${SCITIES.map(x=>`<option value="${x.id}"${x.id===c.id?" selected":""}>${x.name}</option>`).join("")}</select>`;
+  $("svcCity").addEventListener("change",e=>{svcCity=e.target.value;store.set("svcCity",svcCity);renderSvc()});
+  $("svcCats").innerHTML=SVC.map(s=>`<button type="button" class="chip" data-c="${s.id}" aria-pressed="${s.id===cat.id}">${s.short}</button>`).join("");
+  const lo=prices[0],hi=prices[prices.length-1];
+  $("svcRange").innerHTML=`<div><div class="k">Najjeftinije</div><div class="v num down">${eur0(lo)}</div></div><div><div class="k">Medijan</div><div class="v num">${eur0(med)}</div></div><div><div class="k">Najskuplje</div><div class="v num up">${eur0(hi)}</div></div>`;
+  $("plist").innerHTML=list.map((p,i)=>{const d=p.price/med-1;const cl=d<=-0.1?"lo":d>=0.1?"hi":"mid";return `<li><span class="rank">${i+1}</span><span class="pn">${esc(p.name)}<span>${esc(p.hood)}</span></span><span class="delta ${cl}">${Math.abs(d)<0.005?"= medijan":pct(d)}</span><span class="num" style="font-weight:700">${eur0(p.price)}</span></li>`}).join("");
+  stripData={list,med};renderStrip();
+  const meds=SCITIES.map(ci=>({ci,m:median(providers(cat,ci).map(p=>p.price))})).sort((a,b)=>a.m-b.m),mx=meds[meds.length-1].m;
+  $("cityCmpTitle").textContent=cat.short+": medijan po gradu";
+  $("cityBars").innerHTML=meds.map(x=>`<div class="bar${x.ci.id===c.id?" best":""}"><span class="lab">${x.ci.name}</span><span class="track"><span class="fill" style="width:${(x.m/mx*100).toFixed(1)}%"></span></span><span class="val">${eur0(x.m)}</span></div>`).join("");
+}
+function renderStrip(){
+  const el=$("strip");if(!stripData||el.offsetParent===null)return;
+  const {list,med}=stripData,W=Math.max(280,el.clientWidth),H=112,m={l:14,r:14};
+  const ps=list.map(p=>p.price),ticks=niceTicks(Math.min(...ps)*0.92,Math.max(...ps)*1.05,5),x0=ticks[0],x1=ticks[ticks.length-1];
+  const X=v=>m.l+(v-x0)/(x1-x0)*(W-m.l-m.r),base=72,placed=[];
+  const dots=list.map(p=>{const x=X(p.price);let lvl=0;while(placed.some(q=>q.lvl===lvl&&Math.abs(q.x-x)<15))lvl++;placed.push({x,lvl});return{p,x,y:base-lvl*15}});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Raspodjela cijena, medijan ${eur0(med)}">
+    <line x1="${m.l}" x2="${W-m.r}" y1="${base+12}" y2="${base+12}" stroke="var(--line)"/>
+    ${ticks.map(t=>`<text x="${X(t)}" y="${base+31}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${t} €</text>`).join("")}
+    <line x1="${X(med)}" x2="${X(med)}" y1="4" y2="${base+12}" stroke="var(--ink2)" stroke-dasharray="3 3"/>
+    <text x="${X(med)+6}" y="14" font-size="11.5" font-weight="700" fill="var(--ink2)">medijan ${eur0(med)}</text>
+    ${dots.map((d,i)=>`<circle class="dot" data-i="${i}" cx="${d.x.toFixed(1)}" cy="${d.y}" r="6.5" fill="${d.p.price<med*0.9?"var(--good)":d.p.price>med*1.1?"var(--bad)":"var(--ink2)"}" stroke="var(--surface)" stroke-width="2"/>`).join("")}</svg>`;
+  el.querySelectorAll(".dot").forEach(c=>{const d=dots[+c.dataset.i];const on=e=>{const pt=e.touches?e.touches[0]:e;showTip(`<b>${esc(d.p.name)}</b><br>${esc(d.p.hood)} · <span class="num">${eur0(d.p.price)}</span>`,pt.clientX,pt.clientY)};
+    c.addEventListener("mousemove",on);c.addEventListener("touchstart",on,{passive:true});c.addEventListener("mouseleave",hideTip)});
+}
+$("svcCats").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;svcCat=b.dataset.c;store.set("svc",svcCat);renderSvc()});
+
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{renderLine();renderStrip()},120)});
+addEventListener("scroll",hideTip,{passive:true});
+boot();
+})();
+</script>
+</body>
+</html>
